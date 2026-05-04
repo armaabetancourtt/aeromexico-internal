@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # ── Base de Datos (Solo accesible internamente) ──
+  mongodb:
+    image: mongo:6-jammy
+    container_name: mongodb-vuelos
+    restart: unless-stopped
+    ports:
+    - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: vuelos
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - backend-net
+
+  # ── Admin Backend (Gestión interna) ──
+  admin-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: priv-admin-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"  #HAY QUE QUITAR "ports" y poner "expose"
+      # solo debe ser -"4000", no doble
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongodb:27017/vuelos
+      JWT_SECRET: aeromexico_admin_secret_2026
+      NODE_ENV: production
+    volumes:
+      - admin_logs:/app/logs
+    depends_on:
+      - mongodb
+    networks:
+      - backend-net
+      - admin-net
+
+  # ── Admin Frontend (Panel de Control) ──
+  admin-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: priv-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "8090:80" # Acceso local para ti
+    depends_on:
+      - admin-backend
+    networks:
+      - admin-net
+
+volumes:
+  admin_logs:
+    driver: local
+  mongodb_data:
+    driver: local
+
+networks:
+  # Red para comunicación DB <-> Backends
+  backend-net:
+    driver: bridge
+  # Red para comunicación Back-Admin <-> Front-Admin
+  admin-net:
+    driver: bridge
