@@ -5,21 +5,31 @@ set -e
 
 echo "[AEROMEXICO] Iniciando despliegue de infraestructura local..."
 
-# 1. Actualizar sistema e instalar Docker si no existe
+# Actualizar sistema
 sudo yum update -y
+
+# Instalar Docker si no existe
 if ! command -v docker &> /dev/null; then
-    echo "Instalando Docker..."
+    echo "[AEROMEXICO] Instalando Docker..."
+
     sudo amazon-linux-extras install docker -y
-    sudo service docker start
-    sudo usermod -a -G docker ec2-user
+    sudo systemctl enable docker
+    sudo systemctl start docker
+
+    sudo usermod -aG docker ec2-user
+
+    echo "[AEROMEXICO] Docker instalado correctamente."
+else
+    echo "[AEROMEXICO] Docker ya está instalado."
 fi
 
-# 2. Crear estructura de directorios para logs
-echo "Creando carpetas de persistencia..."
-mkdir -p ~/app/logs
-touch ~/app/logs/app.log
+# Crear red Docker si no existe
+docker network inspect aeromexico-network >/dev/null 2>&1 || \
+docker network create aeromexico-network
 
-# 3. Dar permisos
-sudo chmod -R 777 ~/app/logs
+# Crear volumen persistente para logs/datos
+docker volume create priv-profinaldevops_admin_logs >/dev/null 2>&1 || true
 
-echo "Despliegue técnico completado. Listo para iniciar aplicaciones."
+echo "------------------------------------------------"
+echo "[AEROMEXICO] Infraestructura preparada correctamente."
+echo "Listo para ejecutar ./start_app.sh"

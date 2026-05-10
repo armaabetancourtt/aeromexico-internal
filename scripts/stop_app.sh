@@ -3,18 +3,29 @@
 
 echo "[AEROMEXICO] Deteniendo servicios..."
 
-# Detener contenedores por nombre
-containers=$(docker ps -aqf "name=aeromexico-app")
-if [ -n "$containers" ]; then
-    docker stop aeromexico-app
-    docker rm aeromexico-app
-    echo " Contenedor de Aplicación detenido."
-fi
+CONTAINERS=(
+    "priv-admin-frontend"
+    "priv-admin-backend"
+    "mongodb-vuelos"
+)
 
-if [ -n "$(docker ps -aqf "name=mongo-db")" ]; then
-    docker stop mongo-db
-    docker rm mongo-db
-    echo " Contenedor de MongoDB detenido."
-fi
+for container in "${CONTAINERS[@]}"
+do
+    if [ "$(docker ps -aq -f name=^/${container}$)" ]; then
+        
+        # Quitar reinicio automático
+        docker update --restart=no $container > /dev/null 2>&1
+        
+        # Detener contenedor
+        docker stop $container
+        
+        # Eliminar contenedor
+        docker rm $container
+        
+        echo " Contenedor '$container' detenido y eliminado."
+    else
+        echo " El contenedor '$container' no existe o ya está detenido."
+    fi
+done
 
 echo " Todos los procesos de Docker han sido finalizados."

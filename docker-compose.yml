@@ -22,9 +22,9 @@ services:
       dockerfile: Dockerfile
     container_name: priv-admin-backend
     restart: unless-stopped
-    ports:
-      - "4000:4000"  #HAY QUE QUITAR "ports" y poner "expose"
-      # solo debe ser -"4000", no doble
+    expose:
+      - "4000" 
+      
     environment:
       PORT: 4000
       MONGO_URI: mongodb://mongodb:27017/vuelos
