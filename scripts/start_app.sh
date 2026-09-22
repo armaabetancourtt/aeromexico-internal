@@ -1,18 +1,16 @@
-#!/bin/bash
-# start_app.sh - Arrancar contenedores Docker
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo " [AEROMEXICO] Levantando servicios..."
+echo "[AEROOPS] Starting internal operations and data plane..."
 
-docker stop aeromexico-app mongo-db 2>/dev/null || true
-docker rm aeromexico-app mongo-db 2>/dev/null || true
+if [ ! -f .env ]; then
+  echo "Missing .env. Copy .env.example to .env and configure the required secrets."
+  exit 1
+fi
 
-# EJEMPLO PARA EC2 PÚBLICA (Landing Page)
-# docker run -d --name aeromexico-app -p 80:80 nginx
+docker compose up -d --build
 
-# EJEMPLO PARA EC2 PRIVADA (Intranet + Mongo)
-# docker run -d --name mongo-db -p 27017:27017 mongo
-
-echo "Estado de los contenedores:"
-docker ps
-
-echo "Aplicación iniciada correctamente."
+echo
+docker compose ps
+echo
+echo "Admin UI: http://localhost:${ADMIN_PORT:-8090}"
