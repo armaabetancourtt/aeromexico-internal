@@ -9,7 +9,7 @@ const logger = require('./logger');
 const app = express();
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongodb:27017/vuelos';
-const JWT_SECRET = process.env.JWT_SECRET || 'aeromexico_admin_secret_2026';
+const JWT_SECRET = process.env.JWT_SECRET;\nif (!JWT_SECRET) {\n  throw new Error('JWT_SECRET is required');\n}
 
 app.use(cors());
 app.use(express.json());
@@ -76,11 +76,19 @@ const Admin = mongoose.model('Admin', adminSchema);
 
 async function seedAdmin() {
   try {
-    const existing = await Admin.findOne({ email: 'admin@aeromexico.com' });
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
+
+    if (!email || !password) {
+      logger.warn('ADMIN_EMAIL/ADMIN_PASSWORD not configured; skipping seed admin creation');
+      return;
+    }
+
+    const existing = await Admin.findOne({ email });
     if (!existing) {
-      const hashed = await bcrypt.hash('Admin2026!', 10);
-      await Admin.create({ name: 'Administrador', email: 'admin@aeromexico.com', password: hashed, role: 'propietario' });
-      logger.info('Admin por defecto creado: admin@aeromexico.com');
+      const hashed = await bcrypt.hash(password, 12);
+      await Admin.create({ name: 'Demo Administrator', email, password: hashed, role: 'propietario' });
+      logger.info('Seed admin created from environment configuration');
     }
   } catch (err) {
     logger.error(`Error seedAdmin: ${err.message}`);
